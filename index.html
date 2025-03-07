@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bootstrap Project</title>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1>Welcome to Telegrendr!</h1>
+        <p id="url_container"></p>
+    </div>
+    <script>
+        function setupPage() {
+            const urlContainer = document.getElementById('url_container');
+            urlContainer.innerText = window.location.href;
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            setupPage()
+        });
+    </script>
+</body>
+
+</html>
