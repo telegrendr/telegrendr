@@ -4,21 +4,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Bootstrap Project</title>
+    <title>Telegrendr</title>
+    <style>
+        body {
+            font-family: Roboto, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 2em;
+        }
+
+        h2 {
+            font-size: 1.75em;
+        }
+
+        h3 {
+            font-size: 1.5em;
+        }
+
+        h4 {
+            font-size: 1.25em;
+        }
+
+        h5 {
+            font-size: 1.125em;
+        }
+
+        h6 {
+            font-size: 1em;
+        }
+
+        strong {
+            font-weight: bold;
+        }
+
+        em {
+            font-style: italic;
+        }
+
+        u {
+            text-decoration: underline;
+        }
+
+        s,
+        strike {
+            text-decoration: line-through;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        a:hover {
+            color: #0056b3;
+        }
+
+        ul,
+        ol {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        ul ul,
+        ol ol,
+        ul ol,
+        ol ul {
+            margin-bottom: 0;
+        }
+
+        blockquote {
+            margin: 0 0 0 20px;
+            padding: 10px;
+            border-left: 4px solid #ccc;
+        }
+
+        code {
+            background-color: #f9f9f9;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .article {
+            margin: 20px auto;
+            max-width: 100%;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container mt-5">
-        <h1>Welcome to Telegrendr!</h1>
-        <p id="url_container"></p>
+    <div id="telegrendr" class="article">
+        <div id="homeview" class="container">
+            <h1>Telegrendr</h1>
+            <p>Welcome to Telegrendr, an advanced renderer for Telegra.ph articles. Our service allows you to render
+                Telegra.ph articles as actual HTML without restrictions, enhancing your reading experience.</p>
+
+            <h2>How It Works</h2>
+            <p>To use Telegrendr, simply pass the Telegra.ph article ID as a query parameter in the URL. For example:
+            </p>
+            <code>https://telegrendr.github.io/telegrendr?telegraph=Sample-Page-12-15</code>
+            <p>Replace <code>Sample-Page-12-15</code> with the ID of the Telegra.ph article you want to render.</p>
+
+            <h2>Features</h2>
+            <ul>
+                <li><strong>No Restrictions</strong>: Enjoy Telegra.ph articles without any limitations.</li>
+                <li><strong>Enhanced Experience</strong>: Render articles as proper HTML for better readability.</li>
+                <li><strong>JavaScript Support</strong>: Embed scripts like in regular JavaScript.</li>
+                <li><strong>Easy to Use</strong>: Simply append the article ID to the URL and let Telerendr handle the
+                    rest.</li>
+            </ul>
+        </div>
     </div>
     <script>
-        function setupPage() {
-            const urlContainer = document.getElementById('url_container');
-            urlContainer.innerText = window.location.href;
+        function nodeToDom(node) {
+            if (typeof node === 'string' || node instanceof String) {
+                return document.createRange().createContextualFragment(node)
+            }
+            if (node.tag) {
+                var domNode = document.createElement(node.tag);
+                if (node.attrs) {
+                    for (var name in node.attrs) {
+                        var value = node.attrs[name];
+                        if ((node.tag === 'img' || node.tag === 'video' || node.tag === 'iframe') && name === 'src') {
+                            let u = URL.parse(value, "https://telegra.ph/");
+                            if (u) {
+                                value = u.toString();
+                            }
+                        }
+                        domNode.setAttribute(name, value);
+                    }
+                }
+            } else {
+                var domNode = document.createDocumentFragment();
+            }
+            if (node.children) {
+                for (var i = 0; i < node.children.length; i++) {
+                    var child = node.children[i];
+                    domNode.appendChild(nodeToDom(child));
+                }
+            }
+            return domNode;
         }
-        document.addEventListener('DOMContentLoaded', function () {
-            setupPage()
+        function setupPage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const telegraphParam = urlParams.get('telegraph');
+            if (telegraphParam) {
+                document.getElementById('homeview').style.display = 'none';
+
+                return fetch('https://api.telegra.ph/getPage/' + telegraphParam + "?return_content=true").then((resp) => {
+                    if (resp.status == 200) {
+                        const container = document.getElementById('telegrendr');
+                        resp.json().then((data) => {
+                            if (data.ok != true) {
+                                console.log(data);
+                                alert('Something went wrong...');
+                                return;
+                            }
+                            const root = {
+                                children: data.result.content,
+                            };
+                            container.appendChild(nodeToDom(root));
+                        });
+                    } else {
+                        console.log(resp);
+                        alert('Something went wrong...');
+                    }
+                });
+            } else {
+                return Promise.resolve();
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function (e) {
+            document.removeEventListener('DOMContentLoaded', this);
+            setupPage().then(() => {
+                setTimeout(() => {
+                    document.dispatchEvent(new Event('telegrendrLoaded'));
+                }, 1);
+            });
         });
     </script>
 </body>
